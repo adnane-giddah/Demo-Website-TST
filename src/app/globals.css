@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 0px;
+
+  --background: oklch(0.9855 0 0);
+  --foreground: oklch(0.2180 0 0);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2180 0 0);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2180 0 0);
+
+  --primary: oklch(0.4180 0 0);
+  --primary-foreground: oklch(0.9880 0 0);
+
+  --secondary: oklch(0.9580 0 0);
+  --secondary-foreground: oklch(0.2900 0 0);
+
+  --muted: oklch(0.9640 0 0);
+  --muted-foreground: oklch(0.5220 0 0);
+
+  --accent: oklch(0.9480 0 0);
+  --accent-foreground: oklch(0.3400 0 0);
+
+  --destructive: oklch(0.4200 0 0);
+  --destructive-foreground: oklch(0.9880 0 0);
+
+  --success: oklch(0.3600 0 0);
+  --success-foreground: oklch(0.9880 0 0);
+
+  --warning: oklch(0.5800 0 0);
+  --warning-foreground: oklch(0.9880 0 0);
+
+  --border: oklch(0.9080 0 0);
+  --input: oklch(0.8900 0 0);
+  --ring: oklch(0.4180 0 0);
+
+  --paper: oklch(0.9950 0 0);
+  --paper-foreground: oklch(0.1950 0 0);
+
+  
+  --scale-track: oklch(0.9500 0 0);
+  --scale-hover: oklch(0.9000 0 0);
+}
+
+.dark {
+  --background: oklch(0.1780 0 0);
+  --foreground: oklch(0.9280 0 0);
+
+  --card: oklch(0.2160 0 0);
+  --card-foreground: oklch(0.9280 0 0);
+
+  --popover: oklch(0.2160 0 0);
+  --popover-foreground: oklch(0.9280 0 0);
+
+  --primary: oklch(0.7180 0 0);
+  --primary-foreground: oklch(0.1780 0 0);
+
+  --secondary: oklch(0.2660 0 0);
+  --secondary-foreground: oklch(0.9280 0 0);
+
+  --muted: oklch(0.2580 0 0);
+  --muted-foreground: oklch(0.6620 0 0);
+
+  --accent: oklch(0.3020 0 0);
+  --accent-foreground: oklch(0.8880 0 0);
+
+  --destructive: oklch(0.7200 0 0);
+  --destructive-foreground: oklch(0.1780 0 0);
+
+  --success: oklch(0.8200 0 0);
+  --success-foreground: oklch(0.1780 0 0);
+
+  --warning: oklch(0.6200 0 0);
+  --warning-foreground: oklch(0.1780 0 0);
+
+  --border: oklch(0.2900 0 0);
+  --input: oklch(0.3280 0 0);
+  --ring: oklch(0.7180 0 0);
+
+  --paper: oklch(0.2020 0 0);
+  --paper-foreground: oklch(0.9380 0 0);
+
+  --scale-track: oklch(0.2660 0 0);
+  --scale-hover: oklch(0.3200 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-paper: var(--paper);
+  --color-paper-foreground: var(--paper-foreground);
+  --color-scale-track: var(--scale-track);
+  --color-scale-hover: var(--scale-hover);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-source-serif), "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", "Cascadia Code", monospace;
+
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  ::selection {
+    background-color: color-mix(in oklch, var(--primary) 22%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  
+  .math-prose {
+    font-family: var(--font-serif);
+    font-size: 1.125rem;
+    line-height: 1.75;
+    color: var(--paper-foreground);
+    letter-spacing: 0.003em;
+  }
+
+  .math-prose p {
+    margin-block: 0.85em;
+  }
+
+  .math-prose p:first-child { margin-block-start: 0; }
+  .math-prose p:last-child { margin-block-end: 0; }
+
+  .math-prose .katex {
+    font-size: 1.06em;
+  }
+
+  
+  .math-prose .katex-display {
+    margin-block: 1.15em;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block: 0.2em;
+  }
+
+  .math-prose .katex-display > .katex {
+    white-space: normal;
+  }
+
+  
+  .math-prose .katex-error {
+    color: var(--destructive);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: color-mix(in oklch, var(--destructive) 10%, transparent);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+  }
+
+  .math-compact {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .skeleton {
+    background: var(--muted);
+    animation: skeleton-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+}
+
+.latex-editor {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  tab-size: 2;
+}

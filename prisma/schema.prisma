@@ -1,0 +1,214 @@
+// ---------------------------------------------------------------------------
+// Olympiad Portal - data model
+//
+// Notes
+//   * Three separate authorization layers, modeled independently:
+//       1. User.status: is this account allowed on the platform at all?
+//       2. ContestPermission.canView: can this account open this contest?
+//       3. ContestPermission.canVote: can this account rate its problems?
+//     A user can be APPROVED globally and still have no access to a given
+//     contest, and can have access without being allowed to vote.
+//   * Voting weights live on the (user, contest) pair, not on the user, so
+//     the same person can carry a different weight in different contests.
+//   * `Vote` holds both ratings in one row under UNIQUE(userId, problemId),
+//     which makes a duplicate vote impossible at the database level.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+  REMOVED
+}
+
+enum ContestStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+// ---------------------------------------------------------------------------
+// Accounts
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  /// Always stored lower-cased so uniqueness is case-insensitive.
+  email        String     @unique
+  /// Argon2id hash. A plaintext password is never stored or logged.
+  passwordHash String
+  role         Role       @default(USER)
+  status       UserStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  sessions        Session[]
+  permissions     ContestPermission[]
+  votes           Vote[]
+  createdContests Contest[]           @relation("ContestCreatedBy")
+  auditEntries    AuditLog[]          @relation("AuditActor")
+
+  @@index([status])
+  @@index([role])
+  @@map("users")
+}
+
+/// Opaque, revocable server-side sessions. The cookie carries a random token;
+/// only its HMAC-SHA256 digest is persisted, so a database leak cannot be
+/// replayed as a login.
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userAgent String?
+  ipAddress String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ---------------------------------------------------------------------------
+// Contests & problems
+// ---------------------------------------------------------------------------
+
+model Contest {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  /// Optional real-world date of the contest / selection session.
+  eventDate   DateTime?
+  status      ContestStatus @default(DRAFT)
+  createdById String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  createdBy   User?               @relation("ContestCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  problems    Problem[]
+  permissions ContestPermission[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contests")
+}
+
+model Problem {
+  id             String   @id @default(cuid())
+  contestId      String
+  title          String
+  /// Raw LaTeX / text source. Rendered client-side by KaTeX; never executed.
+  statementLatex String
+  source         String?
+  /// Admin-only. Must never reach a normal user's API response.
+  privateNotes   String?
+  position       Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  votes   Vote[]
+
+  @@index([contestId, position])
+  @@map("problems")
+}
+
+// ---------------------------------------------------------------------------
+// Per-contest authorisation
+// ---------------------------------------------------------------------------
+
+model ContestPermission {
+  id        String   @id @default(cuid())
+  userId    String
+  contestId String
+  canView   Boolean  @default(false)
+  canVote   Boolean  @default(false)
+  /// Voting weight for this user in this contest only. Admin-visible only.
+  /// Constrained to [0.01, 100] by a CHECK constraint in the migration.
+  weight    Decimal  @default(1.0) @db.Decimal(6, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([contestId])
+  @@index([userId])
+  @@map("contest_permissions")
+}
+
+// ---------------------------------------------------------------------------
+// Voting
+// ---------------------------------------------------------------------------
+
+/// One row per (user, problem). Ratings are nullable so a partially completed
+/// rating can be autosaved; a problem counts as "rated" only when both are set.
+/// Values are pinned to 1..10 by CHECK constraints in the migration.
+model Vote {
+  id         String   @id @default(cuid())
+  userId     String
+  problemId  String
+  beauty     Int?
+  difficulty Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([problemId])
+  @@index([userId])
+  @@map("votes")
+}
+
+// ---------------------------------------------------------------------------
+// Audit trail
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  /// Null for system-generated events (e.g. self-service registration).
+  adminId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  /// Denormalised so the audit log can be filtered per contest cheaply.
+  contestId  String?
+  /// Human-readable summary rendered in the UI without extra lookups.
+  summary    String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  admin User? @relation("AuditActor", fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([adminId])
+  @@index([contestId])
+  @@index([action])
+  @@map("audit_logs")
+}
