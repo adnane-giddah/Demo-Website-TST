@@ -1,4 +1,6 @@
 import "server-only";
+import { assertNotDemo, isDemoMode } from "@/lib/demo/mode";
+import { demoCountUsersByStatus, demoListUsers } from "@/lib/demo/store";
 import type { Prisma, Role, UserStatus } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AUDIT_ACTIONS, recordAudit, type AuditAction } from "@/lib/audit";
@@ -21,6 +23,7 @@ export type ManagedUser = {
     contestCount: number;
 };
 export async function listUsers(filters: UserFilters = {}): Promise<ManagedUser[]> {
+    if (await isDemoMode()) return demoListUsers(filters);
     const where: Prisma.UserWhereInput = {};
     if (filters.status && filters.status !== "ALL")
         where.status = filters.status;
@@ -57,6 +60,7 @@ export async function listUsers(filters: UserFilters = {}): Promise<ManagedUser[
     }));
 }
 export async function countUsersByStatus() {
+    if (await isDemoMode()) return demoCountUsersByStatus();
     const grouped = await prisma.user.groupBy({
         by: ["status"],
         _count: { _all: true },
@@ -109,6 +113,7 @@ export async function updateUser(actor: SessionUser, userId: string, input: {
     status?: UserStatus;
     role?: Role;
 }) {
+    await assertNotDemo();
     const target = await prisma.user.findUnique({
         where: { id: userId },
         select: { id: true, name: true, email: true, role: true, status: true },

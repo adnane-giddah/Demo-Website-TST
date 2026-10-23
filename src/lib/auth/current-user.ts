@@ -1,6 +1,8 @@
 import "server-only";
 import { cache } from "react";
 import type { Role, UserStatus } from "@prisma/client";
+import { isDemoMode } from "@/lib/demo/mode";
+import { DEMO_USER } from "@/lib/demo/store";
 import { readSession, renewSessionIfNeeded } from "@/lib/auth/session";
 import { ForbiddenError, UnauthorizedError } from "@/lib/errors";
 import { hasCapability, isAdminRole, type Capability, } from "@/lib/permissions/capabilities";
@@ -13,6 +15,8 @@ export type SessionUser = {
     createdAt: Date;
 };
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
+    if (await isDemoMode())
+        return DEMO_USER;
     const session = await readSession();
     if (!session)
         return null;

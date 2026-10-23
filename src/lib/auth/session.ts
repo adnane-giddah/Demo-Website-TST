@@ -1,6 +1,7 @@
 import "server-only";
 import { createHmac, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { DEMO_COOKIE } from "@/lib/demo/mode";
 import { env, isProduction } from "@/lib/env";
 import { prisma } from "@/lib/db";
 export const SESSION_COOKIE = "olympiad_session";
@@ -93,6 +94,7 @@ export async function renewSessionIfNeeded(sessionId: string, expiresAt: Date) {
 }
 export async function destroyCurrentSession() {
     const cookieStore = await cookies();
+    cookieStore.set(DEMO_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: isProduction, path: "/", maxAge: 0 });
     const token = cookieStore.get(SESSION_COOKIE)?.value;
     if (token) {
         await prisma.session

@@ -1,4 +1,6 @@
 import "server-only";
+import { assertNotDemo, isDemoMode } from "@/lib/demo/mode";
+import { demoParticipants } from "@/lib/demo/store";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/audit";
@@ -18,6 +20,7 @@ export type ContestParticipant = {
     votesCast: number;
 };
 export async function listContestParticipants(contestId: string): Promise<ContestParticipant[]> {
+    if (await isDemoMode()) return demoParticipants(contestId);
     const [users, permissions, voteCounts] = await Promise.all([
         prisma.user.findMany({
             where: { status: { in: ["APPROVED", "SUSPENDED"] } },
@@ -52,6 +55,7 @@ export async function listContestParticipants(contestId: string): Promise<Contes
     });
 }
 export async function updateContestPermission(actor: SessionUser, contestId: string, input: PermissionUpdateInput) {
+    await assertNotDemo();
     const [contest, target] = await Promise.all([
         prisma.contest.findUnique({
             where: { id: contestId },
@@ -152,6 +156,7 @@ export async function updateContestPermission(actor: SessionUser, contestId: str
     };
 }
 export async function removeUserFromContest(actor: SessionUser, contestId: string, userId: string) {
+    await assertNotDemo();
     const [contest, target] = await Promise.all([
         prisma.contest.findUnique({
             where: { id: contestId },

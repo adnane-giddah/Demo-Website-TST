@@ -1,4 +1,6 @@
 import "server-only";
+import { assertNotDemo, isDemoMode } from "@/lib/demo/mode";
+import { demoContestForAdmin, demoListContestsForAdmin, demoListContestsForMember } from "@/lib/demo/store";
 import type { ContestStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/audit";
@@ -17,6 +19,7 @@ export type MemberContestSummary = {
     canVote: boolean;
 };
 export async function listContestsForMember(user: SessionUser): Promise<MemberContestSummary[]> {
+    if (await isDemoMode()) return demoListContestsForMember(user);
     const permissions = await prisma.contestPermission.findMany({
         where: {
             userId: user.id,
@@ -91,6 +94,7 @@ export type AdminContestSummary = {
     voterCount: number;
 };
 export async function listContestsForAdmin(filters: AdminContestFilters = {}): Promise<AdminContestSummary[]> {
+    if (await isDemoMode()) return demoListContestsForAdmin(filters);
     const where: Prisma.ContestWhereInput = {};
     if (filters.status && filters.status !== "ALL") {
         where.status = filters.status;
@@ -129,6 +133,7 @@ export async function listContestsForAdmin(filters: AdminContestFilters = {}): P
     }));
 }
 export async function getContestForAdmin(contestId: string) {
+    if (await isDemoMode()) return demoContestForAdmin(contestId);
     const contest = await prisma.contest.findUnique({
         where: { id: contestId },
         select: {
@@ -147,6 +152,7 @@ export async function getContestForAdmin(contestId: string) {
     return contest;
 }
 export async function createContest(actor: SessionUser, input: ContestCreateInput) {
+    await assertNotDemo();
     const contest = await prisma.contest.create({
         data: {
             title: input.title,
@@ -169,6 +175,7 @@ export async function createContest(actor: SessionUser, input: ContestCreateInpu
     return contest;
 }
 export async function updateContest(actor: SessionUser, contestId: string, input: Partial<ContestCreateInput>) {
+    await assertNotDemo();
     const existing = await prisma.contest.findUnique({
         where: { id: contestId },
         select: { id: true, title: true, status: true },
@@ -211,6 +218,7 @@ export async function updateContest(actor: SessionUser, contestId: string, input
     return contest;
 }
 export async function deleteContest(actor: SessionUser, contestId: string) {
+    await assertNotDemo();
     const contest = await prisma.contest.findUnique({
         where: { id: contestId },
         select: { id: true, title: true, _count: { select: { problems: true } } },
@@ -229,6 +237,7 @@ export async function deleteContest(actor: SessionUser, contestId: string) {
     return { id: contest.id, title: contest.title };
 }
 export async function duplicateContest(actor: SessionUser, contestId: string) {
+    await assertNotDemo();
     const source = await prisma.contest.findUnique({
         where: { id: contestId },
         select: {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/shared/page-header";
 import { RoleBadge } from "@/components/shared/status-badge";
 import { requireAdmin } from "@/lib/auth/current-user";
-import { prisma } from "@/lib/db";
+import { getPlatformSnapshot } from "@/lib/services/admin-queries";
 import { CAPABILITIES, hasCapability, type Capability, } from "@/lib/permissions/capabilities";
 import { RATING_MAX, RATING_MIN, WEIGHT_MAX, WEIGHT_MIN } from "@/lib/validation/schemas";
 import { cn, formatDateTime } from "@/lib/utils";
@@ -23,21 +23,7 @@ const CAPABILITY_GROUPS: Array<{
 ];
 export default async function AdminSettingsPage() {
     const actor = await requireAdmin();
-    const [superAdmins, counts] = await Promise.all([
-        prisma.user.findMany({
-            where: { role: "SUPER_ADMIN" },
-            orderBy: { createdAt: "asc" },
-            select: { id: true, name: true, email: true, status: true, createdAt: true },
-        }),
-        prisma.$transaction([
-            prisma.user.count(),
-            prisma.contest.count(),
-            prisma.problem.count(),
-            prisma.vote.count(),
-            prisma.auditLog.count(),
-        ]),
-    ]);
-    const [userCount, contestCount, problemCount, voteCount, auditCount] = counts;
+    const { superAdmins, userCount, contestCount, problemCount, voteCount, auditCount } = await getPlatformSnapshot();
     return (<div className="space-y-8">
  <PageHeader title="Settings" description="How the platform's set up, and what you personally are allowed to do here."/>
 

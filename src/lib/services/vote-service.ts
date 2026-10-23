@@ -1,4 +1,6 @@
 import "server-only";
+import { assertNotDemo, isDemoMode } from "@/lib/demo/mode";
+import { demoOwnVote, demoOwnVotes } from "@/lib/demo/store";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors";
@@ -12,6 +14,7 @@ export type OwnVote = {
     updatedAt: Date;
 };
 export async function submitVote(user: SessionUser, input: VoteInput): Promise<OwnVote> {
+    await assertNotDemo();
     const problem = await prisma.problem.findUnique({
         where: { id: input.problemId },
         select: { id: true, contestId: true },
@@ -51,6 +54,7 @@ export async function submitVote(user: SessionUser, input: VoteInput): Promise<O
     }
 }
 export async function getOwnVotesForContest(userId: string, contestId: string): Promise<Map<string, OwnVote>> {
+    if (await isDemoMode()) return demoOwnVotes(userId, contestId);
     const votes = await prisma.vote.findMany({
         where: { userId, problem: { contestId } },
         select: { problemId: true, beauty: true, difficulty: true, updatedAt: true },
@@ -58,6 +62,7 @@ export async function getOwnVotesForContest(userId: string, contestId: string): 
     return new Map(votes.map((vote) => [vote.problemId, vote]));
 }
 export async function getOwnVoteForProblem(userId: string, problemId: string): Promise<OwnVote | null> {
+    if (await isDemoMode()) return demoOwnVote(userId, problemId);
     return prisma.vote.findUnique({
         where: { userId_problemId: { userId, problemId } },
         select: { problemId: true, beauty: true, difficulty: true, updatedAt: true },

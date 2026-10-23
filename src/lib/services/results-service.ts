@@ -1,4 +1,6 @@
 import "server-only";
+import { isDemoMode } from "@/lib/demo/mode";
+import { demoBreakdown, demoProgress, demoResults } from "@/lib/demo/store";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors";
@@ -44,6 +46,7 @@ async function loadEligibleWeights(contestId: string) {
     return { weightByUser, eligibleVoters };
 }
 export async function getContestResults(contestId: string): Promise<ContestResults> {
+    if (await isDemoMode()) return demoResults(contestId);
     const contest = await prisma.contest.findUnique({
         where: { id: contestId },
         select: { id: true, title: true, status: true },
@@ -144,6 +147,7 @@ export async function getProblemVoteBreakdown(contestId: string, problemId: stri
         totalWeight: number;
     };
 }> {
+    if (await isDemoMode()) return demoBreakdown(contestId, problemId);
     const problem = await prisma.problem.findFirst({
         where: { id: problemId, contestId },
         select: { id: true, position: true, title: true, statementLatex: true },
@@ -198,6 +202,7 @@ export async function getProblemVoteBreakdown(contestId: string, problemId: stri
     };
 }
 export async function getContestProgress(contestId: string) {
+    if (await isDemoMode()) return demoProgress(contestId);
     const [problems, { eligibleVoters }] = await Promise.all([
         prisma.problem.findMany({
             where: { contestId },

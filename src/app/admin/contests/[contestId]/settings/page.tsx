@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ContestForm } from "@/components/admin/contest-form";
 import { requireCapability } from "@/lib/auth/current-user";
-import { prisma } from "@/lib/db";
+import { getContestHeader } from "@/lib/services/admin-queries";
 import { formatDateTime } from "@/lib/utils";
 export default async function ContestSettingsPage({ params, }: {
     params: Promise<{
@@ -10,19 +10,7 @@ export default async function ContestSettingsPage({ params, }: {
 }) {
     await requireCapability("contest:update");
     const { contestId } = await params;
-    const contest = await prisma.contest.findUnique({
-        where: { id: contestId },
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            eventDate: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-            createdBy: { select: { name: true } },
-        },
-    });
+    const contest = await getContestHeader(contestId);
     if (!contest)
         notFound();
     return (<div className="space-y-8">

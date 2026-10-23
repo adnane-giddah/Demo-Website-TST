@@ -4,7 +4,7 @@ import { ContestTabs } from "@/components/admin/contest-tabs";
 import { PageHeader } from "@/components/shared/page-header";
 import { ContestStatusBadge } from "@/components/shared/status-badge";
 import { requireCapability } from "@/lib/auth/current-user";
-import { prisma } from "@/lib/db";
+import { getContestHeader } from "@/lib/services/admin-queries";
 import { formatDate } from "@/lib/utils";
 export default async function AdminContestLayout({ children, params, }: {
     children: React.ReactNode;
@@ -14,17 +14,7 @@ export default async function AdminContestLayout({ children, params, }: {
 }) {
     await requireCapability("contest:read_all");
     const { contestId } = await params;
-    const contest = await prisma.contest.findUnique({
-        where: { id: contestId },
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            eventDate: true,
-            status: true,
-            _count: { select: { problems: true } },
-        },
-    });
+    const contest = await getContestHeader(contestId);
     if (!contest)
         notFound();
     return (<div className="space-y-6">

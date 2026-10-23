@@ -1,4 +1,6 @@
 import "server-only";
+import { assertNotDemo, isDemoMode } from "@/lib/demo/mode";
+import { demoProblem, demoProblems } from "@/lib/demo/store";
 import { prisma } from "@/lib/db";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/audit";
 import { NotFoundError, ValidationError } from "@/lib/errors";
@@ -27,6 +29,7 @@ export type MemberProblem = {
     position: number;
 };
 export async function listProblemsForMember(contestId: string): Promise<MemberProblem[]> {
+    if (await isDemoMode()) return demoProblems(contestId);
     return prisma.problem.findMany({
         where: { contestId },
         orderBy: { position: "asc" },
@@ -34,6 +37,7 @@ export async function listProblemsForMember(contestId: string): Promise<MemberPr
     });
 }
 export async function listProblemsForAdmin(contestId: string) {
+    if (await isDemoMode()) return demoProblems(contestId);
     return prisma.problem.findMany({
         where: { contestId },
         orderBy: { position: "asc" },
@@ -41,6 +45,7 @@ export async function listProblemsForAdmin(contestId: string) {
     });
 }
 export async function getProblemForMember(contestId: string, problemId: string) {
+    if (await isDemoMode()) return demoProblem(contestId, problemId);
     const problem = await prisma.problem.findFirst({
         where: { id: problemId, contestId },
         select: MEMBER_PROBLEM_FIELDS,
@@ -50,6 +55,7 @@ export async function getProblemForMember(contestId: string, problemId: string) 
     return problem;
 }
 export async function getProblemForAdmin(contestId: string, problemId: string) {
+    if (await isDemoMode()) return demoProblem(contestId, problemId);
     const problem = await prisma.problem.findFirst({
         where: { id: problemId, contestId },
         select: ADMIN_PROBLEM_FIELDS,
@@ -59,6 +65,7 @@ export async function getProblemForAdmin(contestId: string, problemId: string) {
     return problem;
 }
 export async function createProblem(actor: SessionUser, contestId: string, input: ProblemCreateInput) {
+    await assertNotDemo();
     const contest = await prisma.contest.findUnique({
         where: { id: contestId },
         select: { id: true, title: true },
@@ -93,6 +100,7 @@ export async function createProblem(actor: SessionUser, contestId: string, input
     return problem;
 }
 export async function updateProblem(actor: SessionUser, contestId: string, problemId: string, input: Partial<ProblemCreateInput>) {
+    await assertNotDemo();
     const existing = await prisma.problem.findFirst({
         where: { id: problemId, contestId },
         select: { id: true, position: true, contest: { select: { title: true } } },
@@ -125,6 +133,7 @@ export async function updateProblem(actor: SessionUser, contestId: string, probl
     return problem;
 }
 export async function deleteProblem(actor: SessionUser, contestId: string, problemId: string) {
+    await assertNotDemo();
     const problem = await prisma.problem.findFirst({
         where: { id: problemId, contestId },
         select: {
@@ -156,6 +165,7 @@ export async function deleteProblem(actor: SessionUser, contestId: string, probl
     return { id: problem.id, title: problem.title };
 }
 export async function reorderProblems(actor: SessionUser, contestId: string, orderedIds: string[]) {
+    await assertNotDemo();
     const current = await prisma.problem.findMany({
         where: { contestId },
         select: { id: true },

@@ -1,5 +1,7 @@
 import "server-only";
 import { Prisma, type ContestStatus } from "@prisma/client";
+import { isDemoMode } from "@/lib/demo/mode";
+import { demoAccess } from "@/lib/demo/store";
 import { prisma } from "@/lib/db";
 import { NotFoundError, ForbiddenError } from "@/lib/errors";
 import type { SessionUser } from "@/lib/auth/current-user";
@@ -21,6 +23,17 @@ export type ContestAccess = {
     isAdmin: boolean;
 };
 export async function getContestAccess(user: SessionUser, contestId: string): Promise<ContestAccess | null> {
+    if (await isDemoMode()) {
+        const found = demoAccess(user, contestId);
+        if (!found)
+            return null;
+        const canVote = !!found.perm?.canVote;
+        return {
+            contest: found.contest, canView: true, canVote,
+            votingOpen: canVote && found.contest.status === "OPEN",
+            weight: new Prisma.Decimal(found.perm?.weight ?? 1), isAdmin: true,
+        };
+    }
     const contest = await prisma.contest.findUnique({
         where: { id: contestId },
         select: {

@@ -1,4 +1,6 @@
 import "server-only";
+import { isDemoMode } from "@/lib/demo/mode";
+import { demoAudit, demoOverview } from "@/lib/demo/store";
 import { prisma } from "@/lib/db";
 export type AdminOverview = {
     activeContests: number;
@@ -9,6 +11,7 @@ export type AdminOverview = {
     totalMembers: number;
 };
 export async function getAdminOverview(): Promise<AdminOverview> {
+    if (await isDemoMode()) return demoOverview();
     const [activeContests, draftContests, pendingUsers, totalProblems, activeVoters, totalMembers,] = await Promise.all([
         prisma.contest.count({ where: { status: "OPEN" } }),
         prisma.contest.count({ where: { status: "DRAFT" } }),
@@ -54,6 +57,7 @@ export async function listAuditEntries(filters: AuditFilters = {}): Promise<{
     entries: AuditEntry[];
     total: number;
 }> {
+    if (await isDemoMode()) return demoAudit(filters);
     const where: Record<string, unknown> = {};
     if (filters.category && filters.category !== "ALL") {
         where.action = { startsWith: `${filters.category}.` };

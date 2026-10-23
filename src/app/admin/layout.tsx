@@ -7,7 +7,7 @@ import { UserMenu } from "@/components/shared/user-menu";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { isAdminRole } from "@/lib/permissions/capabilities";
-import { prisma } from "@/lib/db";
+import { countPendingUsers } from "@/lib/services/admin-queries";
 export default async function AdminLayout({ children, }: {
     children: React.ReactNode;
 }) {
@@ -16,7 +16,7 @@ export default async function AdminLayout({ children, }: {
         redirect("/login");
     if (user.status !== "APPROVED" || !isAdminRole(user.role))
         notFound();
-    const pendingCount = await prisma.user.count({ where: { status: "PENDING" } });
+    const pendingCount = await countPendingUsers();
     return (<div className="flex min-h-dvh flex-col">
  <header className="sticky top-0 z-40 border-b bg-background">
  <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">

@@ -5,7 +5,7 @@ import { ProgressMeter } from "@/components/shared/progress-meter";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
 import { requireCapability } from "@/lib/auth/current-user";
-import { prisma } from "@/lib/db";
+import { listContestPermissionFlags } from "@/lib/services/admin-queries";
 import { getContestProgress } from "@/lib/services/results-service";
 export default async function ContestOverviewPage({ params, }: {
     params: Promise<{
@@ -16,10 +16,7 @@ export default async function ContestOverviewPage({ params, }: {
     const { contestId } = await params;
     const [progress, permissionCounts] = await Promise.all([
         getContestProgress(contestId),
-        prisma.contestPermission.findMany({
-            where: { contestId },
-            select: { canView: true, canVote: true },
-        }),
+        listContestPermissionFlags(contestId),
     ]);
     const authorised = permissionCounts.filter((p) => p.canView).length;
     const voters = progress.eligibleVoters;

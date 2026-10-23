@@ -3,7 +3,7 @@ import { ProblemList, ProblemsLockedNotice } from "@/components/admin/problem-li
 import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { requireCapability } from "@/lib/auth/current-user";
-import { prisma } from "@/lib/db";
+import { getContestHeader, listProblemRows } from "@/lib/services/admin-queries";
 export default async function ContestProblemsPage({ params, }: {
     params: Promise<{
         contestId: string;
@@ -11,32 +11,10 @@ export default async function ContestProblemsPage({ params, }: {
 }) {
     await requireCapability("contest:read_all");
     const { contestId } = await params;
-    const [contest, problems] = await Promise.all([
-        prisma.contest.findUnique({
-            where: { id: contestId },
-            select: { status: true },
-        }),
-        prisma.problem.findMany({
-            where: { contestId },
-            orderBy: { position: "asc" },
-            select: {
-                id: true,
-                position: true,
-                title: true,
-                source: true,
-                privateNotes: true,
-                _count: { select: { votes: true } },
-            },
-        }),
+    const [contest, rows] = await Promise.all([
+        getContestHeader(contestId),
+        listProblemRows(contestId),
     ]);
-    const rows = problems.map((problem) => ({
-        id: problem.id,
-        position: problem.position,
-        title: problem.title,
-        source: problem.source,
-        hasPrivateNotes: !!problem.privateNotes,
-        voteCount: problem._count.votes,
-    }));
     return (<div className="space-y-4">
  <div className="flex items-center justify-between gap-3">
  <h2 className="text-sm font-semibold tracking-tight">
