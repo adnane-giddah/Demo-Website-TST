@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BrandMark } from "@/components/shared/brand";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/current-user";
 export default async function AuthLayout({ children, }: {
     children: React.ReactNode;
@@ -21,6 +22,15 @@ export default async function AuthLayout({ children, }: {
  </div>
 
  {children}
+
+ <div className="mt-4 rounded-lg border border-dashed p-4 text-center">
+ <p className="mb-3 text-xs text-muted-foreground">
+ Just looking around? No account needed.
+ </p>
+ <Button asChild variant="outline" className="w-full">
+ <Link href="/demo">Demo as an administrator</Link>
+ </Button>
+ </div>
 
  <p className="mt-8 text-center text-xs text-muted-foreground">
  Our committee reviews every request by hand.{" "}
